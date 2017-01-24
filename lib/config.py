@@ -11,12 +11,12 @@ def params_setup(cmdline=None):
 
   # training params
   parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
-  parser.add_argument('--learning_rate_decay_factor', type=float, default=0.99, help='Learning rate decays by this much.')
+  parser.add_argument('--learning_rate_decay_factor', type=float, default=0.999, help='Learning rate decays by this much.')
   parser.add_argument('--max_gradient_norm', type=float, default=1.0, help='Clip gradients to this norm.')
-  parser.add_argument('--batch_size', type=int, default=256, help='Batch size to use during training.')
+  parser.add_argument('--batch_size', type=int, default=128, help='Batch size to use during training.')
 
   parser.add_argument('--vocab_size', type=int, default=100000, help='Dialog vocabulary size.')
-  parser.add_argument('--size', type=int, default=1000, help='Size of each model layer.')
+  parser.add_argument('--size', type=int, default=512, help='Size of each model layer.')
   parser.add_argument('--num_layers', type=int, default=4, help='Number of layers in the model.')
 
   parser.add_argument('--max_train_data_size', type=int, default=0, help='Limit on the size of training data (0: no limit)')
@@ -28,7 +28,7 @@ def params_setup(cmdline=None):
   parser.add_argument('--n_bonus', type=int, default=1, help='bonus with sentence length')
 
   # environment params
-  parser.add_argument('--gpu_usage', type=float, default=1.0, help='tensorflow gpu memory fraction used')
+  parser.add_argument('--gpu_usage', type=float, default=0.9, help='tensorflow gpu memory fraction used')
   parser.add_argument('--rev_model', type=int, default=0, help='reverse Q-A pair, for bi-direction model')
   parser.add_argument('--reinforce_learn', type=int, default=0, help='1 to enable reinforcement learning mode')
   parser.add_argument('--en_tfboard', type=int, default=1, help='Enable writing out tensorboard meta data')
