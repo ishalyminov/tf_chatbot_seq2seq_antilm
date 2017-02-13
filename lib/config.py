@@ -25,12 +25,12 @@ def params_setup(cmdline=None):
   # predicting params
   parser.add_argument('--beam_size', type=int, default=20, help='beam search size')
   parser.add_argument('--antilm', type=float, default=0.7, help='anti-language model weight')
-  parser.add_argument('--n_bonus', type=int, default=1, help='bonus with sentence length')
+  parser.add_argument('--n_bonus', type=float, default=0.05, help='bonus with sentence length')
 
   # environment params
   parser.add_argument('--gpu_usage', type=float, default=0.9, help='tensorflow gpu memory fraction used')
   parser.add_argument('--rev_model', type=int, default=0, help='reverse Q-A pair, for bi-direction model')
-  parser.add_argument('--reinforce_learn', type=int, default=0, help='1 to enable reinforcement learning mode')
+  parser.add_argument('--reinforce_learn', type=int, default=1, help='1 to enable reinforcement learning mode')
   parser.add_argument('--en_tfboard', type=int, default=1, help='Enable writing out tensorboard meta data')
   
 

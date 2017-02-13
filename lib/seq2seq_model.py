@@ -297,8 +297,9 @@ class Seq2SeqModel(object):
       if debug: print("[RESP]: (%.4f) %s" % (step_loss, resp_txt))
 
       # prepare for next dialogue
-      bucket_id = min([b for b in range(len(args.buckets)) if args.buckets[b][0] > len(resp_tokens)])
-      feed_data = {bucket_id: [(resp_tokens, [])]}
+      candidate_buckets = [b for b in range(len(args.buckets)) if args.buckets[b][0] > len(resp_tokens)]
+      bucket_id = min(candidate_buckets) if len(candidate_buckets) else len(args.buckets) - 1
+      feed_data = {bucket_id: [(resp_tokens[:args.buckets[bucket_id][0]], [])]}
       encoder_inputs, decoder_inputs, target_weights = self.get_batch(feed_data, bucket_id)
       
       #----[Reward]----------------------------------------

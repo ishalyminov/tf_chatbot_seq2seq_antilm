@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from operator import itemgetter
+
 import numpy as np
 import tensorflow as tf
 from random import random
@@ -11,8 +13,6 @@ from tensorflow.python.platform import gfile
 from lib import data_utils
 from lib import seq2seq_model
 
-
-import heapq
 
 def create_model(session, args):
   """Create translation model and initialize or load parameters in session."""
@@ -34,7 +34,7 @@ def create_model(session, args):
     summary_writer = tf.train.SummaryWriter(args.tf_board_dir, session.graph)
 
   ckpt = tf.train.get_checkpoint_state(args.model_dir)
-  if ckpt and gfile.Exists(ckpt.model_checkpoint_path):
+  if ckpt:
     print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
     model.saver.restore(session, ckpt.model_checkpoint_path)
   else:
@@ -88,7 +88,12 @@ def get_predicted_sentence(args, input_sentence, vocab, rev_vocab, model, sess, 
     input_token_ids = data_utils.sentence_to_token_ids(input_sentence, vocab)
 
     # Which bucket does it belong to?
-    bucket_id = min([b for b in range(len(args.buckets)) if args.buckets[b][0] > len(input_token_ids)])
+    bucket_candidates = [
+      b
+      for b in range(len(args.buckets))
+      if args.buckets[b][0] > len(input_token_ids)
+    ]
+    bucket_id = min(bucket_candidates) if len(bucket_candidates) else len(args.buckets) - 1
     outputs = []
     feed_data = {bucket_id: [(input_token_ids, outputs)]}
 
@@ -110,7 +115,6 @@ def get_predicted_sentence(args, input_sentence, vocab, rev_vocab, model, sess, 
         target_weights[dptr] = [1.]
         beams, new_beams = new_beams[:args.beam_size], []
       if debug: print("=====[beams]=====", beams)
-      heapq.heapify(beams)  # since we will remove something
       for prob, cand in beams:
         if cand['eos']: 
           results += [(prob, cand)]
@@ -124,7 +128,7 @@ def get_predicted_sentence(args, input_sentence, vocab, rev_vocab, model, sess, 
           # anti-lm
           all_prob_t  = model_step(dummy_encoder_inputs, cand['dec_inp'], dptr, target_weights, bucket_id)
           # adjusted probability
-          all_prob    = all_prob_ts - args.antilm * all_prob_t #+ args.n_bonus * dptr + random() * 1e-50
+          all_prob    = all_prob_ts - args.antilm * all_prob_t + args.n_bonus * dptr # + random() * 1e-50
         else:
           all_prob_t  = [0]*len(all_prob_ts)
           all_prob    = all_prob_ts
@@ -147,16 +151,13 @@ def get_predicted_sentence(args, input_sentence, vocab, rev_vocab, model, sess, 
           }
           new_cand = (new_cand['prob'], new_cand) # for heapq can only sort according to list[0]
           
-          if (len(new_beams) < args.beam_size):
-            heapq.heappush(new_beams, new_cand)
-          elif (new_cand[0] > new_beams[0][0]):
-            heapq.heapreplace(new_beams, new_cand)
-    
+          new_beams.append(new_cand)
+          new_beams = sorted(new_beams, key=itemgetter(0), reverse=True)[:args.beam_size]
     results += new_beams  # flush last cands
 
     # post-process results
     res_cands = []
-    for prob, cand in sorted(results, reverse=True):
-      cand['dec_inp'] = " ".join([dict_lookup(rev_vocab, w) for w in cand['dec_inp']])
+    for prob, cand in sorted(results, key=itemgetter(0), reverse=True):
+      cand['dec_inp'] = " ".join([dict_lookup(rev_vocab, int(w)) for w in cand['dec_inp']])
       res_cands.append(cand)
     return res_cands
